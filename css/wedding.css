@@ -187,7 +187,7 @@ img { display: block; }
 /* ── Bismillah ───────────────────────────── */
 /*  Figma: y=80, w=104, h=27                   */
 .bismillah {
-  top: calc(max(env(safe-area-inset-top, 0px), 54px) + 41px); /* Figma y=80 + 15 breathing */
+  top: calc(max(env(safe-area-inset-top, 0px), 20px) + 5dvh); /* Figma y=80 + 15 breathing */
   left: 50%;
   transform: translateX(-50%);
   width: 104px;
@@ -203,7 +203,7 @@ img { display: block; }
 /* ── Malayalam title logo ────────────────── */
 /*  Figma: y=119, w=224, h=116                 */
 .splash-title-logo {
-  top: calc(max(env(safe-area-inset-top, 0px), 54px) + 80px); /* Figma y=119 + 15 */
+  top: calc(max(env(safe-area-inset-top, 0px), 20px) + 12dvh); /* Figma y=119 + 15 */
   left: 50%;
   transform: translateX(-50%);
   width: 224px;
@@ -218,7 +218,7 @@ img { display: block; }
 /* ── Invite text ─────────────────────────── */
 /*  Figma: y=268, Poppins Regular 12px         */
 .splash-invite {
-  top: calc(max(env(safe-area-inset-top, 0px), 54px) + 229px); /* Figma y=268 + 15 */
+  top: calc(max(env(safe-area-inset-top, 0px), 20px) + 27dvh); /* Figma y=268 + 15 */
   left: 50%;
   transform: translateX(-50%);
   width: min(298px, calc(100% - 32px));
@@ -233,25 +233,26 @@ img { display: block; }
 /* ── Groom name ──────────────────────────── */
 /*  Figma: y=314, Astonia Regular ~40px        */
 .splash-groom {
-  top: calc(max(env(safe-area-inset-top, 0px), 54px) + 290px); /* Pushed down to clear the invite text */
+  top: calc(max(env(safe-area-inset-top, 0px), 20px) + 34dvh); /* Pushed down to clear the invite text */
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
   align-items: center;
   font-family: var(--font-astonia);
-  font-size: clamp(70px, 18vw, 110px); /* Massive font size */
+  font-size: clamp(3rem, 15vw, 6rem);
   font-weight: 400;
   color: #fff;
   text-align: center;
-  line-height: 1;
-  white-space: nowrap;
+  line-height: 1.1;
   z-index: 2;
   text-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  max-width: 100%;
+  overflow-wrap: break-word;
 }
 
 .splash-weds-wrap {
-  top: calc(max(env(safe-area-inset-top, 0px), 54px) + 340px); /* Very tight gap */
+  top: calc(max(env(safe-area-inset-top, 0px), 20px) + 42dvh); /* Very tight gap */
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -265,14 +266,12 @@ img { display: block; }
   display: none;
 }
 .splash-weds {
-  position: relative;
   font-family: var(--font-comforter);
-  font-size: clamp(80px, 22vw, 120px); /* Massive size */
+  font-size: clamp(3.5rem, 18vw, 7rem);
   color: #f7e0b5; /* cream/gold color */
   transform: none; /* Straight position */
   text-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   line-height: 1;
-  white-space: nowrap;
   z-index: 1;
   animation: none; /* Removed animation */
 }
@@ -300,24 +299,25 @@ img { display: block; }
 }
 
 .splash-bride {
-  top: calc(max(env(safe-area-inset-top, 0px), 54px) + 390px); /* Very tight gap */
+  top: calc(max(env(safe-area-inset-top, 0px), 20px) + 48dvh); /* Very tight gap */
   left: 50%;
   transform: translateX(-50%);
   font-family: var(--font-astonia);
-  font-size: clamp(70px, 18vw, 110px);
+  font-size: clamp(3rem, 15vw, 6rem);
   font-weight: 400;
   color: #fff;
   text-align: center;
-  line-height: 1;
-  white-space: nowrap;
+  line-height: 1.1;
   z-index: 2;
   text-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+  max-width: 100%;
+  overflow-wrap: break-word;
 }
 
 /* ── Countdown ───────────────────────────── */
 /*  Figma: y=526                               */
 .countdown {
-  top: calc(max(env(safe-area-inset-top, 0px), 54px) + 510px); /* Pushed down to clear the names */
+  top: calc(max(env(safe-area-inset-top, 0px), 20px) + 62dvh); /* Pushed down to clear the names */
   left: 0; right: 0;
   display: flex;
   align-items: flex-end;
@@ -383,7 +383,7 @@ img { display: block; }
 /* ── Event Date / Venue ──────────────────── */
 /*  Figma: y=646 (date), y=666 (venue)         */
 .event-meta {
-  top: calc(max(env(safe-area-inset-top, 0px), 54px) + 630px); /* Pushed down as well */
+  top: calc(max(env(safe-area-inset-top, 0px), 20px) + 76dvh); /* Pushed down as well */
   left: 0; right: 0;
   text-align: center;
   padding: 0 24px;
@@ -1065,9 +1065,9 @@ img { display: block; }
    iPhone mini, 13 mini, small Androids
 ════════════════════════════════════════════ */
 @media (max-height: 820px) {
-  /* Scale names down slightly but keep them huge and overlapping */
-  .splash-groom, .splash-bride { font-size: clamp(55px, 16vw, 80px); }
-  .splash-weds  { font-size: clamp(65px, 18vw, 100px); }
+  /* Scale down names & text */
+  .splash-groom, .splash-bride { font-size: clamp(2.5rem, 10vw, 4rem); }
+  .splash-weds { font-size: clamp(3rem, 12vw, 5rem); }
 
   /* Shrink countdown boxes */
   .count-box       { width: 54px; height: 70px; }
@@ -1108,18 +1108,18 @@ img { display: block; }
   }
   .splash-groom {
     top: calc(max(env(safe-area-inset-top, 0px), 44px) + 225px);
-    font-size: clamp(45px, 14vw, 70px);
+    font-size: clamp(2.5rem, 10vw, 4rem);
   }
   .splash-weds-wrap {
     top: calc(max(env(safe-area-inset-top, 0px), 44px) + 265px); /* Tight overlap */
     width: auto; height: auto;
   }
   .splash-weds {
-    font-size: clamp(55px, 16vw, 80px);
+    font-size: clamp(3rem, 12vw, 5rem);
   }
   .splash-bride {
     top: calc(max(env(safe-area-inset-top, 0px), 44px) + 305px); /* Tight overlap */
-    font-size: clamp(45px, 14vw, 70px);
+    font-size: clamp(2.5rem, 10vw, 4rem);
   }
   /* Give countdown a touch more clearance on SE */
   .countdown {
@@ -1130,8 +1130,10 @@ img { display: block; }
 /* ════════════════════════════════════════════
    DESKTOP — CENTERED PHONE FRAME
 ════════════════════════════════════════════ */
-@media (min-width: 620px) {
+@media (min-width: 1024px) {
   html, body { background: #1a1a1a; }
+  .splash-groom, .splash-bride { font-size: 5rem !important; }
+  .splash-weds { font-size: 6rem !important; }
   .page {
     left: 50% !important; right: auto !important;
     width: 393px !important;
