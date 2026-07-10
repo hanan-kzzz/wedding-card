@@ -371,3 +371,180 @@ if (typeof lucide !== 'undefined') lucide.createIcons();
     });
   });
 })();
+
+/* ════════════════════════════════════════════
+   FACE RECOGNITION UPLOAD
+════════════════════════════════════════════ */
+(function initFaceRecognition() {
+  const uploadImageBtn = document.getElementById('uploadImageBtn');
+  const liveSelfieBtn = document.getElementById('liveSelfieBtn');
+  const selfieUpload = document.getElementById('selfieUpload');
+  const liveSelfieUpload = document.getElementById('liveSelfieUpload');
+  const selfieResult = document.getElementById('selfieResult');
+
+  if (!uploadImageBtn || !selfieUpload) return;
+
+  uploadImageBtn.addEventListener('click', () => {
+    selfieUpload.click();
+  });
+
+  const handleUpload = async (e, btn) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Show immediate feedback
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i data-lucide="loader" class="spin"></i> Preparing...';
+    btn.disabled = true;
+    selfieResult.style.display = 'block';
+    selfieResult.innerHTML = 'Getting ready...';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+
+    // Downscale the image to fit comfortably in sessionStorage and speed up upload
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const MAX_SIZE = 800;
+        let w = img.width;
+        let h = img.height;
+        if (Math.max(w, h) > MAX_SIZE) {
+          const scale = MAX_SIZE / Math.max(w, h);
+          w *= scale;
+          h *= scale;
+        }
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        
+        // Convert to highly compressed JPEG base64
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        
+        // Store in sessionStorage to pass to gallery.html
+        try {
+          sessionStorage.setItem('pendingSelfie', dataUrl);
+          sessionStorage.removeItem('matchedPhotos'); // Clear old matches
+          window.location.href = 'gallery.html'; // Instantly redirect
+        } catch (err) {
+          console.error("Storage error:", err);
+          selfieResult.style.color = '#f87171';
+          selfieResult.innerHTML = 'Image too large. Please use a smaller file.';
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+        }
+      };
+      img.src = event.target.result;
+    };
+    reader.onerror = function() {
+      selfieResult.style.color = '#f87171';
+      selfieResult.innerHTML = 'Failed to read image file.';
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = ''; // clear input
+  };
+
+  selfieUpload.addEventListener('change', (e) => handleUpload(e, uploadImageBtn));
+})();
+
+/* ════════════════════════════════════════════
+   LIVE CAMERA MODAL
+════════════════════════════════════════════ */
+(function initCameraModal() {
+  const liveSelfieBtn = document.getElementById('liveSelfieBtn');
+  const cameraModal = document.getElementById('cameraModal');
+  const closeCameraBtn = document.getElementById('closeCameraBtn');
+  const cameraVideo = document.getElementById('cameraVideo');
+  const captureBtn = document.getElementById('captureBtn');
+  const cameraCanvas = document.getElementById('cameraCanvas');
+  const selfieResult = document.getElementById('selfieResult');
+  
+  let stream = null;
+  
+  if (!liveSelfieBtn || !cameraModal) return;
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      stream = null;
+    }
+    cameraVideo.srcObject = null;
+    cameraModal.setAttribute('aria-hidden', 'true');
+  };
+
+  const startCamera = async () => {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      cameraVideo.srcObject = stream;
+      cameraModal.setAttribute('aria-hidden', 'false');
+    } catch (err) {
+      console.error("Camera error:", err);
+      alert("Could not access camera. Please upload an image instead.");
+    }
+  };
+
+  liveSelfieBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    startCamera();
+  });
+
+  closeCameraBtn.addEventListener('click', stopCamera);
+
+  captureBtn.addEventListener('click', () => {
+    if (!stream) return;
+    
+    // Draw to canvas
+    cameraCanvas.width = cameraVideo.videoWidth;
+    cameraCanvas.height = cameraVideo.videoHeight;
+    const ctx = cameraCanvas.getContext('2d');
+    
+    // Mirror the canvas context since the video is mirrored
+    ctx.translate(cameraCanvas.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(cameraVideo, 0, 0, cameraCanvas.width, cameraCanvas.height);
+    
+    // Convert to dataUrl and resize if needed (simplified resize inline)
+    const MAX_SIZE = 800;
+    let w = cameraCanvas.width;
+    let h = cameraCanvas.height;
+    if (Math.max(w, h) > MAX_SIZE) {
+      const scale = MAX_SIZE / Math.max(w, h);
+      w *= scale;
+      h *= scale;
+    }
+    
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width = w;
+    finalCanvas.height = h;
+    const finalCtx = finalCanvas.getContext('2d');
+    finalCtx.drawImage(cameraCanvas, 0, 0, w, h);
+    
+    const dataUrl = finalCanvas.toDataURL('image/jpeg', 0.8);
+    
+    // Process upload UI
+    const originalText = liveSelfieBtn.innerHTML;
+    liveSelfieBtn.innerHTML = '<i data-lucide="loader" class="spin"></i> Preparing...';
+    liveSelfieBtn.disabled = true;
+    selfieResult.style.display = 'block';
+    selfieResult.innerHTML = 'Getting ready...';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    
+    stopCamera();
+    
+    // Store and redirect
+    try {
+      sessionStorage.setItem('pendingSelfie', dataUrl);
+      sessionStorage.removeItem('matchedPhotos');
+      window.location.href = 'gallery.html';
+    } catch (err) {
+      console.error("Storage error:", err);
+      selfieResult.style.color = '#f87171';
+      selfieResult.innerHTML = 'Image too large. Please use a smaller file.';
+      liveSelfieBtn.innerHTML = originalText;
+      liveSelfieBtn.disabled = false;
+    }
+  });
+})();

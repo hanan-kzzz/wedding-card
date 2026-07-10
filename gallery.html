@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#f5c6e8" />
+  <title>Your Photos | Hanan & Shifa</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Comforter&family=Poppins:wght@300;400;500;600&family=Sora:wght@600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/wedding.css" />
+  <style>
+    .gallery-header {
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+    }
+    .back-btn {
+      color: var(--primary);
+      background: #fdf2fa;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+    .back-btn:hover {
+      background: #f5c6e8;
+    }
+    .gallery-title {
+      font-family: var(--font-astonia);
+      font-size: 28px;
+      color: var(--primary);
+      margin: 0;
+    }
+    .gallery-content {
+      padding: 20px;
+      overflow-y: auto;
+      height: calc(100% - 150px); /* leave room for header and footer */
+      padding-bottom: 100px;
+    }
+    .gallery-content::-webkit-scrollbar {
+      width: 6px;
+    }
+    .gallery-content::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .gallery-content::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 4px;
+    }
+    .gallery-content::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 0, 0, 0.5);
+    }
+    .gallery-footer {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 16px 20px;
+      background: #fff;
+      border-top: 1px solid var(--border);
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+    }
+    @keyframes pulse-bg {
+      0% { background-color: #f1f5f9; }
+      50% { background-color: #e2e8f0; }
+      100% { background-color: #f1f5f9; }
+    }
+    @keyframes pulseText {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.98); }
+    }
+    .skeleton-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+    .skeleton-item {
+      aspect-ratio: 1;
+      border-radius: 12px;
+      background-color: #f1f5f9;
+      animation: pulse-bg 1.5s infinite ease-in-out;
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .photo-item {
+      opacity: 0;
+      animation: fadeInUp 0.6s ease-out forwards;
+    }
+    .photo-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+    }
+    .photo-modal img {
+      max-width: 95vw;
+      max-height: 90vh;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+    .modal-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      color: white;
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Use the 'page' class so it gets the exact phone ratio framing on desktop -->
+  <section class="page revealed" style="background: #f6f6f6; overflow: hidden; position: fixed; inset: 0; z-index: 10;">
+    
+    <div class="gallery-header">
+      <a href="index.html" class="back-btn" aria-label="Go back">
+        <i data-lucide="arrow-left" width="20" height="20"></i>
+      </a>
+      <h1 class="gallery-title">Your Photos</h1>
+    </div>
+
+    <style>
+      .heart-loader-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 20px;
+        height: 80px;
+      }
+      .heart-loader {
+        display: inline-block;
+        position: relative;
+        width: 64px;
+        height: 64px;
+        transform: rotate(45deg);
+        transform-origin: 32px 32px;
+      }
+      .heart-loader div {
+        top: 23px;
+        left: 19px;
+        position: absolute;
+        width: 26px;
+        height: 26px;
+        background: var(--primary);
+        animation: heart-loader 1.2s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+        border-radius: 4px 0 0 0;
+      }
+      .heart-loader div:after,
+      .heart-loader div:before {
+        content: " ";
+        position: absolute;
+        display: block;
+        width: 26px;
+        height: 26px;
+        background: var(--primary);
+      }
+      .heart-loader div:before {
+        left: -17px;
+        border-radius: 50% 0 0 50%;
+      }
+      .heart-loader div:after {
+        top: -17px;
+        border-radius: 50% 50% 0 0;
+      }
+      @keyframes heart-loader {
+        0% { transform: scale(0.95); }
+        5% { transform: scale(1.1); }
+        39% { transform: scale(0.85); }
+        45% { transform: scale(1); }
+        60% { transform: scale(0.95); }
+        100% { transform: scale(0.9); }
+      }
+      .loading-text {
+        font-family: var(--font-astonia);
+        font-size: 24px;
+        color: var(--primary);
+        animation: pulseText 1.5s infinite ease-in-out;
+      }
+    </style>
+    <div class="gallery-content" id="galleryContent">
+      <div style="text-align:center; padding: 40px 20px; color: var(--text-body);">
+        <div class="heart-loader-container">
+          <div class="heart-loader"><div></div></div>
+        </div>
+        <p class="loading-text">Loading your photos...</p>
+      </div>
+    </div>
+
+    <div class="gallery-footer">
+      <button id="bulkDownloadBtn" class="download-btn bulk-btn">
+        <i data-lucide="download" width="18" height="18"></i>
+        Bulk Download All
+      </button>
+    </div>
+
+    <!-- Full Screen Photo Modal -->
+    <div id="photoModal" class="photo-modal">
+      <button class="modal-close" id="modalClose" aria-label="Close modal">
+        <i data-lucide="x" width="24" height="24"></i>
+      </button>
+      <img id="modalImage" src="" alt="Full Screen Photo" />
+    </div>
+
+  </section>
+
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script>
+    lucide.createIcons();
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const pendingSelfie = sessionStorage.getItem('pendingSelfie');
+      const matchesData = sessionStorage.getItem('matchedPhotos');
+      const galleryContent = document.getElementById('galleryContent');
+      const bulkBtn = document.getElementById('bulkDownloadBtn');
+
+      if (pendingSelfie) {
+        // We have a pending selfie to process!
+        galleryContent.innerHTML = `
+          <div style="text-align:center; padding: 20px 0; color: var(--text-body);">
+            <p style="font-weight: 500; font-size: 16px;">Analyzing your beautiful face...</p>
+            <div class="skeleton-grid">
+              <div class="skeleton-item" style="animation-delay: 0s"></div>
+              <div class="skeleton-item" style="animation-delay: 0.1s"></div>
+              <div class="skeleton-item" style="animation-delay: 0.2s"></div>
+              <div class="skeleton-item" style="animation-delay: 0.3s"></div>
+              <div class="skeleton-item" style="animation-delay: 0.4s"></div>
+              <div class="skeleton-item" style="animation-delay: 0.5s"></div>
+            </div>
+          </div>
+        `;
+        bulkBtn.disabled = true;
+        lucide.createIcons();
+
+        // Convert base64 back to Blob
+        fetch(pendingSelfie)
+          .then(res => res.blob())
+          .then(blob => {
+            const formData = new FormData();
+            formData.append('file', blob, 'selfie.jpg');
+            return fetch('http://localhost:8000/api/recognize', {
+              method: 'POST',
+              body: formData
+            });
+          })
+          .then(res => {
+            if (!res.ok) throw new Error('Failed to process image');
+            return res.json();
+          })
+          .then(data => {
+            sessionStorage.removeItem('pendingSelfie'); // Clear it
+            if (data.status === 'success' && data.matches && data.matches.length > 0) {
+              sessionStorage.setItem('matchedPhotos', JSON.stringify(data.matches));
+              renderMatches(data.matches);
+            } else {
+              galleryContent.innerHTML = `<div style="text-align:center; padding: 40px; color: #516271;">${data.message || 'No matching photos found.'}</div>`;
+            }
+          })
+          .catch(err => {
+            console.error(err);
+            sessionStorage.removeItem('pendingSelfie');
+            galleryContent.innerHTML = '<div style="text-align:center; padding: 40px; color: #f87171;">Server error. Please go back and try again.</div>';
+          });
+          
+        return; // Wait for fetch
+      }
+
+      // If no pending selfie, check if we already have matches
+      if (matchesData) {
+        renderMatches(JSON.parse(matchesData));
+      } else {
+        galleryContent.innerHTML = '<div style="text-align:center; padding: 40px; color: #f87171;">No photos found. Please go back and try again.</div>';
+        bulkBtn.disabled = true;
+      }
+
+      function renderMatches(matches) {
+        if (!matches || matches.length === 0) {
+          galleryContent.innerHTML = '<div style="text-align:center; padding: 40px; color: #516271;">No matching photos found.</div>';
+          bulkBtn.disabled = true;
+          return;
+        }
+
+        bulkBtn.disabled = false;
+        let html = '<div class="photo-modal-grid">';
+        matches.forEach((matchUrl, idx) => {
+          const fullUrl = `http://localhost:8000${matchUrl}`;
+          html += `
+            <div class="photo-item" style="animation-delay: ${idx * 0.15}s">
+              <img src="${fullUrl}" alt="Matched Photo" class="clickable-image" style="cursor: pointer;" />
+              <button class="photo-item-dl" data-url="${fullUrl}" data-filename="wedding_photo_${idx+1}.jpg" aria-label="Download photo">
+                <i data-lucide="download" width="18" height="18"></i>
+              </button>
+            </div>
+          `;
+        });
+        html += '</div>';
+        galleryContent.innerHTML = html;
+        lucide.createIcons();
+
+        // Full Screen Image Viewer
+        const photoModal = document.getElementById('photoModal');
+        const modalImage = document.getElementById('modalImage');
+        const modalClose = document.getElementById('modalClose');
+
+        galleryContent.querySelectorAll('.clickable-image').forEach(img => {
+          img.addEventListener('click', () => {
+            modalImage.src = img.src;
+            photoModal.style.display = 'flex';
+          });
+        });
+
+        modalClose.addEventListener('click', () => {
+          photoModal.style.display = 'none';
+          modalImage.src = '';
+        });
+        
+        photoModal.addEventListener('click', (e) => {
+          if (e.target === photoModal) {
+            photoModal.style.display = 'none';
+            modalImage.src = '';
+          }
+        });
+
+        // Individual downloads
+        galleryContent.querySelectorAll('.photo-item-dl').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const url = btn.getAttribute('data-url');
+            const filename = btn.getAttribute('data-filename');
+            downloadImageAsBlob(url, filename, btn);
+          });
+        });
+
+        // Bulk download
+        bulkBtn.onclick = () => {
+          bulkBtn.disabled = true;
+          const origText = bulkBtn.innerHTML;
+          bulkBtn.innerHTML = '<i data-lucide="loader" class="spin"></i> Downloading...';
+          lucide.createIcons();
+          
+          let delay = 0;
+          matches.forEach((matchUrl, idx) => {
+            const fullUrl = `http://localhost:8000${matchUrl}`;
+            setTimeout(() => {
+              downloadImageAsBlob(fullUrl, `wedding_photo_${idx+1}.jpg`, null);
+            }, delay);
+            delay += 500;
+          });
+          
+          setTimeout(() => {
+            bulkBtn.innerHTML = origText;
+            bulkBtn.disabled = false;
+            lucide.createIcons();
+          }, delay + 500);
+        };
+      }
+    });
+
+    async function downloadImageAsBlob(url, filename, btn) {
+      let origHtml;
+      if (btn) {
+        origHtml = btn.innerHTML;
+        btn.innerHTML = '<i data-lucide="loader" class="spin"></i>';
+        btn.disabled = true;
+        lucide.createIcons();
+      }
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Network response was not ok');
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+      } catch (err) {
+        console.error('Download failed', err);
+      } finally {
+        if (btn) {
+          btn.innerHTML = origHtml;
+          btn.disabled = false;
+          lucide.createIcons();
+        }
+      }
+    }
+  </script>
+</body>
+</html>
