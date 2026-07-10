@@ -9,6 +9,8 @@ from insightface.app import FaceAnalysis
 import json
 from numpy.linalg import norm
 import os
+import uuid
+import shutil
 
 from fastapi.staticfiles import StaticFiles
 
@@ -37,84 +39,45 @@ except Exception as e:
 
 # Load the database
 DB_PATH = "database.json"
-WEDDING_PHOTOS = []
+DB_DATA = {"persons": {}}
 LAST_DB_MTIME = 0
 
-def sync_gallery():
-    global WEDDING_PHOTOS, LAST_DB_MTIME
-    if not face_app:
-        return
-
-    # Reload from disk only if modified (saves I/O time on every request)
+def load_db():
+    global DB_DATA, LAST_DB_MTIME
     if os.path.exists(DB_PATH):
         current_mtime = os.path.getmtime(DB_PATH)
         if current_mtime > LAST_DB_MTIME:
             with open(DB_PATH, 'r') as f:
-                WEDDING_PHOTOS = json.load(f)
+                try:
+                    DB_DATA = json.load(f)
+                except json.JSONDecodeError:
+                    DB_DATA = {"persons": {}}
             LAST_DB_MTIME = current_mtime
     else:
-        WEDDING_PHOTOS = []
+        DB_DATA = {"persons": {}}
 
-    existing_files = {photo.get('file', '') for photo in WEDDING_PHOTOS}
-    new_files_processed = False
-    gallery_dir = "gallery"
+def save_db():
+    with open(DB_PATH, 'w') as f:
+        json.dump(DB_DATA, f, indent=4)
+    global LAST_DB_MTIME
+    if os.path.exists(DB_PATH):
+        LAST_DB_MTIME = os.path.getmtime(DB_PATH)
 
-    if os.path.exists(gallery_dir):
-        valid_extensions = ('.png', '.jpg', '.jpeg', '.webp')
-        for filename in os.listdir(gallery_dir):
-            if not filename.lower().endswith(valid_extensions):
-                continue
-            if filename not in existing_files:
-                print(f"New image found: {filename}, processing...")
-                filepath = os.path.join(gallery_dir, filename)
-                img = cv2.imread(filepath)
-                if img is None:
-                    continue
-                
-                faces = face_app.get(img)
-                embeddings = [face.embedding.tolist() for face in faces]
-                
-                if embeddings:
-                    WEDDING_PHOTOS.append({
-                        "url": f"/gallery/{filename}",
-                        "file": filename,
-                        "embeddings": embeddings
-                    })
-                else:
-                    # Append an empty entry so we don't process it again
-                    WEDDING_PHOTOS.append({
-                        "url": f"/gallery/{filename}",
-                        "file": filename,
-                        "embeddings": []
-                    })
-                new_files_processed = True
-
-    if new_files_processed:
-        with open(DB_PATH, 'w') as f:
-            json.dump(WEDDING_PHOTOS, f)
-        print(f"Database updated with new images. Total photos: {len(WEDDING_PHOTOS)}")
-
-# Initial load
-sync_gallery()
-
+load_db()
 
 def compute_similarity(emb1, emb2):
-    # Cosine similarity
     return np.dot(emb1, emb2) / (norm(emb1) * norm(emb2))
 
-@app.post("/api/recognize")
-async def recognize_face(file: UploadFile = File(...)):
-    if not face_app:
-        raise HTTPException(status_code=500, detail="Face recognition model not initialized.")
-        
-    # Sync gallery images before processing
-    sync_gallery()
-        
-    if not WEDDING_PHOTOS:
-        raise HTTPException(status_code=500, detail="Gallery database is empty or not loaded.")
-
+@app.post("/api/admin/upload")
+async def admin_upload_image(file: UploadFile = File(...)):
     try:
-        # Read the uploaded image
+        gallery_dir = "gallery"
+        group_photos_dir = os.path.join(gallery_dir, "group_photos")
+        unrecognized_dir = os.path.join(gallery_dir, "unrecognized")
+        os.makedirs(gallery_dir, exist_ok=True)
+        os.makedirs(group_photos_dir, exist_ok=True)
+        os.makedirs(unrecognized_dir, exist_ok=True)
+            
         contents = await file.read()
         nparr = np.frombuffer(contents, np.uint8)
         img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
@@ -122,38 +85,170 @@ async def recognize_face(file: UploadFile = File(...)):
         if img is None:
             raise HTTPException(status_code=400, detail="Invalid image file")
 
-        # Optimize: Resize image if it's too large to speed up face detection
+        # Detect faces
+        faces = face_app.get(img)
+        
+        original_name = file.filename
+        final_filename = f"{uuid.uuid4().hex[:8]}_{original_name}"
+        
+        load_db()
+        threshold = 0.5
+        
+        if len(faces) == 0:
+            dest_dir = unrecognized_dir
+            relative_path = f"unrecognized/{final_filename}"
+            file_path = os.path.join(gallery_dir, relative_path)
+            cv2.imwrite(file_path, img)
+            return {"status": "success", "message": f"Uploaded {file.filename} (No faces detected)"}
+            
+        if len(faces) > 1:
+            dest_dir = group_photos_dir
+            relative_path = f"group_photos/{final_filename}"
+        else:
+            dest_dir = None
+            relative_path = None
+            
+        matched_person_ids = []
+        
+        for face in faces:
+            emb = face.embedding
+            matched_id = None
+            
+            # Check against existing persons
+            for pid, pdata in DB_DATA.get("persons", {}).items():
+                sim = compute_similarity(emb, np.array(pdata["representative_embedding"]))
+                if sim > threshold:
+                    matched_id = pid
+                    break
+            
+            if not matched_id:
+                matched_id = f"person_{uuid.uuid4().hex[:8]}"
+                if "persons" not in DB_DATA:
+                    DB_DATA["persons"] = {}
+                DB_DATA["persons"][matched_id] = {
+                    "representative_embedding": emb.tolist(),
+                    "photos": []
+                }
+            
+            matched_person_ids.append(matched_id)
+            
+        if len(faces) == 1:
+            person_id = matched_person_ids[0]
+            dest_dir = os.path.join(gallery_dir, person_id)
+            os.makedirs(dest_dir, exist_ok=True)
+            relative_path = f"{person_id}/{final_filename}"
+            
+        file_path = os.path.join(gallery_dir, relative_path)
+        cv2.imwrite(file_path, img)
+        
+        for pid in set(matched_person_ids):
+            photo_url = f"/gallery/{relative_path}"
+            if photo_url not in DB_DATA["persons"][pid]["photos"]:
+                DB_DATA["persons"][pid]["photos"].append(photo_url)
+                
+        save_db()
+        
+        return {"status": "success", "message": f"Successfully uploaded {file.filename}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+from pydantic import BaseModel
+class DeletePhotoRequest(BaseModel):
+    path: str
+
+@app.get("/api/admin/photos")
+async def get_all_photos():
+    gallery_dir = "gallery"
+    photos = []
+    if os.path.exists(gallery_dir):
+        for root, _, files in os.walk(gallery_dir):
+            for file in files:
+                if file.lower().endswith(('.png', '.jpg', '.jpeg', '.webp')):
+                    rel_dir = os.path.relpath(root, gallery_dir)
+                    if rel_dir == ".":
+                        rel_path = file
+                    else:
+                        rel_path = f"{rel_dir}/{file}".replace("\\", "/")
+                    photos.append({
+                        "url": f"/gallery/{rel_path}",
+                        "filename": file,
+                        "path": rel_path
+                    })
+    # Sort by modification time (newest first)
+    photos.sort(key=lambda p: os.path.getmtime(os.path.join(gallery_dir, p["path"])) if os.path.exists(os.path.join(gallery_dir, p["path"])) else 0, reverse=True)
+    return {"status": "success", "photos": photos}
+
+@app.post("/api/admin/photos/delete")
+async def delete_photo(req: DeletePhotoRequest):
+    try:
+        gallery_dir = "gallery"
+        file_path = os.path.normpath(os.path.join(gallery_dir, req.path))
+        # Basic security check to prevent path traversal
+        if not file_path.startswith(os.path.abspath(gallery_dir)) and not file_path.startswith(gallery_dir):
+             raise HTTPException(status_code=400, detail="Invalid path")
+             
+        # Remove file
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            
+        # Remove from DB
+        load_db()
+        photo_url = f"/gallery/{req.path.replace(os.sep, '/')}"
+        for pid, pdata in list(DB_DATA.get("persons", {}).items()):
+            if photo_url in pdata["photos"]:
+                pdata["photos"].remove(photo_url)
+        save_db()
+        
+        return {"status": "success", "message": "Photo deleted successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/recognize")
+async def recognize_face(file: UploadFile = File(...)):
+    if not face_app:
+        raise HTTPException(status_code=500, detail="Face recognition model not initialized.")
+        
+    load_db()
+        
+    if not DB_DATA.get("persons"):
+        raise HTTPException(status_code=500, detail="Gallery database is empty.")
+
+    try:
+        contents = await file.read()
+        nparr = np.frombuffer(contents, np.uint8)
+        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        
+        if img is None:
+            raise HTTPException(status_code=400, detail="Invalid image file")
+
         max_size = 800
         h, w = img.shape[:2]
         if max(h, w) > max_size:
             scale = max_size / max(h, w)
             img = cv2.resize(img, (int(w * scale), int(h * scale)))
 
-        # Detect faces
         faces = face_app.get(img)
         
         if not faces:
             return {"message": "No faces detected in the uploaded selfie.", "matches": []}
         
-        # Take the embedding of the largest face in the selfie (usually index 0)
         user_embedding = faces[0].embedding
         
         matches = []
-        THRESHOLD = 0.5  # Adjust this similarity threshold as needed (0 to 1, higher is stricter)
+        THRESHOLD = 0.5
         
-        for photo in WEDDING_PHOTOS:
-            for gallery_emb in photo['embeddings']:
-                sim = compute_similarity(user_embedding, np.array(gallery_emb))
-                if sim > THRESHOLD:
-                    matches.append(photo['url'])
-                    break # Skip other faces in the same photo if we already found a match
+        # Only compare against representative embedding of each person!
+        for pid, pdata in DB_DATA.get("persons", {}).items():
+            sim = compute_similarity(user_embedding, np.array(pdata["representative_embedding"]))
+            if sim > THRESHOLD:
+                matches.extend(pdata["photos"])
+                break # Matched the person, no need to keep checking other persons
         
-        # Deduplicate matches
         matches = list(set(matches))
         
         if matches:
             return {
-                "message": f"Successfully matched you in {len(matches)} photo(s)!",
+                "message": f"Successfully matched you! Found {len(matches)} photo(s).",
                 "matches": matches,
                 "status": "success"
             }
@@ -161,7 +256,7 @@ async def recognize_face(file: UploadFile = File(...)):
             return {
                 "message": "We couldn't find any matches in the gallery.",
                 "matches": [],
-                "status": "success" # the request succeeded, just no matches
+                "status": "success"
             }
         
     except Exception as e:

@@ -3,11 +3,11 @@
 /* ══════════════════════════════════════════
    WEDDING WEBSITE — JAVASCRIPT
    Mohammed Abdul Razak & Henna Shireen
-   Nikah: Wednesday, 20 May 2026, 5:30 PM IST
+   Nikah: Sunday, 12 July 2026, 9:30 AM IST
 ══════════════════════════════════════════ */
 
 // ── Wedding date target ────────────────────
-const WEDDING_DATE = new Date('2026-05-20T17:30:00+05:30');
+const WEDDING_DATE = new Date('2026-07-12T09:30:00+05:30');
 
 // ── DOM refs ───────────────────────────────
 const splash        = document.getElementById('splash');

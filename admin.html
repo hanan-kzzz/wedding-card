@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard - Image Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Use Lucide icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root {
+      --bg-color: #f1f5f9;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --success: #10b981;
+      --success-bg: #d1fae5;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    /* Top Navigation */
+    .navbar {
+      background-color: var(--card-bg);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0 40px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+    
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 600;
+      font-size: 18px;
+      color: var(--text-main);
+    }
+    
+    .nav-brand i {
+      color: var(--primary);
+    }
+
+    .nav-user {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+    
+    .avatar {
+      width: 32px;
+      height: 32px;
+      background-color: #e2e8f0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #475569;
+    }
+
+    /* Main Container */
+    .main-container {
+      max-width: 1000px;
+      width: 100%;
+      margin: 40px auto;
+      padding: 0 20px;
+      flex: 1;
+    }
+
+    .page-header {
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .page-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.5px;
+    }
+
+    .page-subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    
+    /* Tabs */
+    .tabs-container {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+
+    .tabs-header {
+      display: flex;
+      border-bottom: 1px solid var(--border-color);
+      background-color: #f8fafc;
+    }
+
+    .tab-btn {
+      padding: 16px 24px;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      position: relative;
+      transition: color 0.2s;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-main);
+    }
+
+    .tab-btn.active {
+      color: var(--primary);
+      background-color: var(--card-bg);
+    }
+    
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background-color: var(--primary);
+    }
+    
+    /* Content Area */
+    .tab-content {
+      display: none;
+      padding: 32px;
+    }
+
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Upload Area styling */
+    .upload-box {
+      border: 2px dashed var(--border-color);
+      border-radius: 8px;
+      padding: 48px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background-color: #f8fafc;
+    }
+    
+    .upload-box:hover, .upload-box.dragover {
+      border-color: var(--primary);
+      background-color: #eff6ff;
+    }
+    
+    .upload-icon {
+      color: var(--primary);
+      margin-bottom: 16px;
+    }
+    
+    .upload-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 8px;
+    }
+    
+    .upload-desc {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    
+    input[type="file"] {
+      display: none;
+    }
+    
+    .preview-section {
+      display: none;
+      margin-top: 24px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 16px;
+      background-color: #f8fafc;
+      position: relative;
+    }
+    
+    .preview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    .preview-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-main);
+    }
+    
+    .btn-icon {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      padding: 4px;
+      transition: all 0.2s;
+    }
+    
+    .btn-icon:hover {
+      background-color: #e2e8f0;
+      color: var(--text-main);
+    }
+    
+    .preview-image {
+      width: 100%;
+      max-height: 400px;
+      object-fit: contain;
+      border-radius: 4px;
+      background-color: #000;
+    }
+    
+    .actions-row {
+      margin-top: 24px;
+      display: flex;
+      justify-content: flex-end;
+    }
+    
+    .btn {
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+    
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+    
+    .btn-primary:hover:not(:disabled) {
+      background-color: var(--primary-hover);
+    }
+    
+    .btn-primary:disabled {
+      background-color: #93c5fd;
+      cursor: not-allowed;
+    }
+
+    /* Status Messages */
+    .alert {
+      padding: 12px 16px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      display: none;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .alert-success {
+      background-color: var(--success-bg);
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+    }
+    
+    .alert-error {
+      background-color: #fee2e2;
+      color: #991b1b;
+      border: 1px solid #fecaca;
+    }
+    
+    .spinner {
+      display: none;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Gallery Grid */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 20px;
+    }
+
+    .gallery-item {
+      position: relative;
+      border-radius: 6px;
+      overflow: hidden;
+      aspect-ratio: 1;
+      border: 1px solid var(--border-color);
+      background-color: #f8fafc;
+      group: item;
+    }
+
+    .gallery-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.3s ease;
+    }
+
+    .gallery-item:hover img {
+      transform: scale(1.05);
+    }
+
+    .item-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 50%);
+      opacity: 0;
+      transition: opacity 0.2s;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 12px;
+    }
+
+    .gallery-item:hover .item-overlay {
+      opacity: 1;
+    }
+
+    .item-details {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    
+    .item-filename {
+      color: white;
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 130px;
+    }
+
+    .btn-delete {
+      background-color: var(--danger);
+      color: white;
+      border: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .btn-delete:hover {
+      background-color: var(--danger-hover);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+      grid-column: 1 / -1;
+    }
+    
+    .empty-state i {
+      margin-bottom: 16px;
+      color: #cbd5e1;
+    }
+
+    .empty-state p {
+      font-size: 15px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <nav class="navbar">
+    <div class="nav-brand">
+      <i data-lucide="layout-dashboard"></i>
+      Gallery Admin
+    </div>
+    <div class="nav-user">
+      <div class="avatar"><i data-lucide="user" width="16" height="16"></i></div>
+      Administrator
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-container">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Image Manager</h1>
+        <p class="page-subtitle">Upload new images or manage your existing gallery photos.</p>
+      </div>
+    </div>
+    
+    <div class="tabs-container">
+      <div class="tabs-header">
+        <button class="tab-btn active" onclick="switchTab('upload')">
+          <i data-lucide="upload-cloud" width="18" height="18"></i>
+          Upload Image
+        </button>
+        <button class="tab-btn" onclick="switchTab('manage')">
+          <i data-lucide="image" width="18" height="18"></i>
+          Manage Images
+        </button>
+      </div>
+
+      <!-- Upload Tab -->
+      <div id="uploadTab" class="tab-content active">
+        <div id="alertUpload" style="display: none;" class="alert"></div>
+
+        <div class="upload-box" id="uploadArea">
+          <i data-lucide="image-plus" width="48" height="48" class="upload-icon"></i>
+          <h3 class="upload-title">Click or drag image to upload</h3>
+          <p class="upload-desc">Supports JPG, PNG, WEBP (Max 10MB)</p>
+          <input type="file" id="fileInput" accept="image/jpeg, image/png, image/webp" />
+        </div>
+        
+        <div class="preview-section" id="previewContainer">
+          <div class="preview-header">
+            <span class="preview-title" id="previewFileName">Selected Image</span>
+            <button class="btn-icon" id="removeBtn" title="Remove image">
+              <i data-lucide="x" width="20" height="20"></i>
+            </button>
+          </div>
+          <img src="" alt="Preview" class="preview-image" id="previewImage" />
+          
+          <div class="actions-row">
+            <button class="btn btn-primary" id="submitBtn">
+              <span id="btnText">Upload to Gallery</span>
+              <div class="spinner" id="loader"></div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Manage Tab -->
+      <div id="manageTab" class="tab-content">
+        <div id="alertManage" style="display: none;" class="alert"></div>
+        <div class="gallery-grid" id="galleryGrid">
+          <div class="empty-state">
+            <div class="spinner" style="display:inline-block; border-top-color:var(--primary); border-color:var(--border-color); border-top-color:var(--primary); width:24px; height:24px;"></div>
+            <p style="margin-top:16px;">Loading photos...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+    
+    const API_URL = 'http://localhost:8000';
+
+    // Tabs functionality
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      
+      if (tab === 'upload') {
+        document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+        document.getElementById('uploadTab').classList.add('active');
+      } else {
+        document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+        document.getElementById('manageTab').classList.add('active');
+        loadPhotos();
+      }
+    }
+    
+    // --- Upload Logic ---
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const previewContainer = document.getElementById('previewContainer');
+    const previewImage = document.getElementById('previewImage');
+    const previewFileName = document.getElementById('previewFileName');
+    const removeBtn = document.getElementById('removeBtn');
+    const submitBtn = document.getElementById('submitBtn');
+    const btnText = document.getElementById('btnText');
+    const loader = document.getElementById('loader');
+    const alertUpload = document.getElementById('alertUpload');
+    
+    let currentFile = null;
+    
+    uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+    uploadArea.addEventListener('dragleave', () => { uploadArea.classList.remove('dragover'); });
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('dragover');
+      if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+    });
+    uploadArea.addEventListener('click', () => { fileInput.click(); });
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length) handleFile(e.target.files[0]);
+    });
+    
+    function handleFile(file) {
+      if (!file.type.startsWith('image/')) {
+        showAlert('error', 'Please select a valid image file.', alertUpload);
+        return;
+      }
+      currentFile = file;
+      previewFileName.textContent = file.name;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        previewImage.src = e.target.result;
+        uploadArea.style.display = 'none';
+        previewContainer.style.display = 'block';
+        submitBtn.disabled = false;
+        alertUpload.style.display = 'none';
+      };
+      reader.readAsDataURL(file);
+    }
+    
+    removeBtn.addEventListener('click', () => {
+      currentFile = null;
+      fileInput.value = '';
+      uploadArea.style.display = 'block';
+      previewContainer.style.display = 'none';
+    });
+    
+    function showAlert(type, message, element) {
+      const icon = type === 'success' ? 'check-circle' : 'alert-circle';
+      element.innerHTML = `<i data-lucide="${icon}" width="18" height="18"></i> ${message}`;
+      element.className = `alert alert-${type}`;
+      element.style.display = 'flex';
+      lucide.createIcons();
+      setTimeout(() => {
+        element.style.display = 'none';
+      }, 5000);
+    }
+    
+    submitBtn.addEventListener('click', async () => {
+      if (!currentFile) return;
+      
+      btnText.style.display = 'none';
+      loader.style.display = 'inline-block';
+      submitBtn.disabled = true;
+      
+      const formData = new FormData();
+      formData.append('file', currentFile);
+      
+      try {
+        const response = await fetch(`${API_URL}/api/admin/upload`, {
+          method: 'POST',
+          body: formData
+        });
+        const result = await response.json();
+        
+        if (response.ok) {
+          showAlert('success', result.message || 'Image uploaded successfully!', alertUpload);
+          setTimeout(() => { removeBtn.click(); }, 2000);
+        } else {
+          showAlert('error', result.detail || 'Upload failed. Please try again.', alertUpload);
+          submitBtn.disabled = false;
+        }
+      } catch (error) {
+        showAlert('error', 'Network error. Make sure the backend is running.', alertUpload);
+        submitBtn.disabled = false;
+      } finally {
+        btnText.style.display = 'inline';
+        loader.style.display = 'none';
+      }
+    });
+
+    // --- Manage Gallery Logic ---
+    const galleryGrid = document.getElementById('galleryGrid');
+    const alertManage = document.getElementById('alertManage');
+
+    async function loadPhotos() {
+      galleryGrid.innerHTML = `
+        <div class="empty-state">
+          <div class="spinner" style="display:inline-block; border-top-color:var(--primary); border-color:var(--border-color); border-top-color:var(--primary); width:24px; height:24px;"></div>
+          <p style="margin-top:16px;">Loading photos...</p>
+        </div>
+      `;
+      try {
+        const response = await fetch(`${API_URL}/api/admin/photos`);
+        if (!response.ok) throw new Error('Failed to fetch photos');
+        
+        const data = await response.json();
+        const photos = data.photos || [];
+
+        if (photos.length === 0) {
+          galleryGrid.innerHTML = `
+            <div class="empty-state">
+              <i data-lucide="image-off" width="48" height="48"></i>
+              <p>No photos found in the gallery.</p>
+            </div>
+          `;
+          lucide.createIcons();
+          return;
+        }
+
+        galleryGrid.innerHTML = '';
+        photos.forEach(photo => {
+          const item = document.createElement('div');
+          item.className = 'gallery-item';
+          
+          item.innerHTML = `
+            <img src="${API_URL}${photo.url}" alt="${photo.filename}" loading="lazy" />
+            <div class="item-overlay">
+              <div class="item-details">
+                <span class="item-filename" title="${photo.filename}">${photo.filename}</span>
+                <button class="btn-delete" onclick="deletePhoto('${photo.path}')" title="Delete Photo">
+                  <i data-lucide="trash-2" width="16" height="16"></i>
+                </button>
+              </div>
+            </div>
+          `;
+          galleryGrid.appendChild(item);
+        });
+        
+        lucide.createIcons();
+
+      } catch (error) {
+        galleryGrid.innerHTML = `
+          <div class="empty-state">
+            <i data-lucide="alert-triangle" width="48" height="48" style="color:var(--danger)"></i>
+            <p>Error loading photos: ${error.message}</p>
+          </div>
+        `;
+        lucide.createIcons();
+      }
+    }
+
+    async function deletePhoto(path) {
+      if (!confirm('Are you sure you want to delete this photo?')) return;
+      
+      try {
+        const response = await fetch(`${API_URL}/api/admin/photos/delete`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: path })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+          showAlert('success', 'Photo deleted successfully!', alertManage);
+          loadPhotos();
+        } else {
+          showAlert('error', result.detail || 'Failed to delete photo.', alertManage);
+        }
+      } catch (error) {
+        showAlert('error', 'Network error. Make sure the backend is running.', alertManage);
+      }
+    }
+  </script>
+</body>
+</html>
